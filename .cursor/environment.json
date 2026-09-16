@@ -1,6 +1,6 @@
 {
   "name": "Idas jobbsökarstudio (ida-jobb)",
-  "install": "corepack enable && pnpm install --frozen-lockfile",
+  "install": "bash .cursor/install.sh",
   "start": "bash .cursor/start.sh",
   "terminals": [
     {
