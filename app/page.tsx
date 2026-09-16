@@ -4,6 +4,8 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { FileCard } from "@/components/file-card"
 import { TodoCard } from "@/components/todo-card"
 import { DiChatCard } from "@/components/di-chat-card"
+import { JobOffersCard } from "@/components/job-offers-card"
+import { getLatestJobOffers } from "@/lib/job-sync"
 import { getFiles } from "@/app/actions/files"
 import { getTodos } from "@/app/actions/todos"
 import { getChatHistory } from "@/app/actions/chat"
@@ -14,13 +16,14 @@ import { MapPin, Sparkles, LogOut } from "lucide-react"
 export const dynamic = "force-dynamic"
 
 export default async function Home() {
-  const [cvFiles, coverFiles, uploads, agentMaterials, todos, chat] = await Promise.all([
+  const [cvFiles, coverFiles, uploads, agentMaterials, todos, chat, jobs] = await Promise.all([
     getFiles("cv"),
     getFiles("cover_letter"),
     getFiles("upload"),
     getFiles("agent_material"),
     getTodos(),
     getChatHistory(),
+    getLatestJobOffers(),
   ])
 
   return (
@@ -104,6 +107,9 @@ export default async function Home() {
 
           {/* DI-chatt (brain + video) */}
           <DiChatCard history={chat} agentUrl={process.env.DID_LANK} className="lg:col-span-2 min-h-[560px]" />
+
+          {/* Daily job matches */}
+          <JobOffersCard jobs={jobs} />
 
           {/* CV + cover letter */}
           <FileCard

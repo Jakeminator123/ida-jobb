@@ -5,6 +5,9 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuthed = request.cookies.get(COOKIE_NAME)?.value === COOKIE_VALUE
 
+  // Vercel Cron authenticates this machine-to-machine route with CRON_SECRET.
+  if (pathname === "/api/cron/jobs") return NextResponse.next()
+
   if (!isAuthed && pathname !== "/login") {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
