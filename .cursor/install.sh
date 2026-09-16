@@ -18,8 +18,13 @@ else
 fi
 
 # --- JS toolchain + dependencies ---
-echo "[install] Enabling corepack (pnpm)"
+# Pin pnpm to the version the lockfile (v9.0) was created with. Without this,
+# corepack defaults to the latest pnpm (e.g. 12.x), whose minimumReleaseAge
+# supply-chain policy rejects this repo's recently published dependencies.
+PNPM_VERSION="10.33.3"
+echo "[install] Enabling corepack and pinning pnpm@${PNPM_VERSION}"
 corepack enable
+corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 echo "[install] Installing JS dependencies (pnpm --frozen-lockfile)"
 pnpm install --frozen-lockfile
