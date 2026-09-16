@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
-import { Send, Loader2, Sparkles, Video } from "lucide-react"
+import { Send, Loader2, Sparkles, Video, ExternalLink } from "lucide-react"
 
 const FALLBACK_DID_AGENT_URL =
   "https://studio.d-id.com/agents/share?id=v2_agt_jcdow0ej&utm_source=copy&key=Y2tfOGdTQ21QQ2VDT05wV18xQzN4TG9Q"
@@ -145,13 +145,27 @@ export function DiChatCard({
           </div>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 p-4">
-          <iframe
-            src={didAgentUrl}
-            title="D-ID videoagent"
-            allow="camera; microphone; autoplay; clipboard-write"
-            className="w-full h-full min-h-[420px] rounded-xl border border-border bg-background"
-          />
+        <div className="flex flex-col flex-1 min-h-0 p-4 gap-3">
+          <div className="relative flex-1 min-h-[360px] rounded-xl border border-border bg-background overflow-hidden">
+            <iframe
+              src={didAgentUrl}
+              title="D-ID videoagent"
+              allow="camera; microphone; autoplay; clipboard-write; fullscreen"
+              className="absolute inset-0 w-full h-full"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center">
+              <p className="text-xs text-muted-foreground font-sans max-w-xs">
+                Laddas inte videoagenten här? D-ID tillåter ibland inte inbäddning – öppna den då i
+                ett eget fönster med knappen nedan.
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="secondary" className="rounded-full w-full">
+            <a href={didAgentUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4" />
+              Öppna videoagenten i nytt fönster
+            </a>
+          </Button>
         </div>
       )}
     </Card>

@@ -127,5 +127,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(60rem 40rem at 85% -10%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 60%),
+      radial-gradient(50rem 35rem at -10% 10%, color-mix(in oklab, var(--chart-2) 16%, transparent), transparent 55%),
+      radial-gradient(45rem 45rem at 50% 120%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 60%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    min-height: 100vh;
   }
 }
