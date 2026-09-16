@@ -6,12 +6,23 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
 import { DidAgent } from "@/components/did-agent"
+import { speakGrokReply } from "@/lib/did-speak"
 import { Send, Loader2, Sparkles, Video, ExternalLink } from "lucide-react"
 
 const FALLBACK_DID_AGENT_URL =
   "https://studio.d-id.com/agents/share?id=v2_agt_jcdow0ej&utm_source=copy&key=Y2tfOGdTQ21QQ2VDT05wV18xQzN4TG9Q"
 
 type Message = { role: "user" | "assistant"; content: string }
+
+const POLL_TIMEOUT_MS = 180_000
+const POLL_START_MS = 1_500
+const POLL_MAX_MS = 4_000
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
 
 export function DiChatCard({
   history,
@@ -28,6 +39,7 @@ export function DiChatCard({
   )
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [pendingRequestId, setPendingRequestId] = useState<string | null>(null)
   const [tab, setTab] = useState<"brain" | "video">("video")
   const [videoOpened, setVideoOpened] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -37,9 +49,60 @@ export function DiChatCard({
     setTab("video")
   }
 
+  function pushAssistant(content: string, opts?: { fromGrok?: boolean }) {
+    setMessages((prev) => [...prev, { role: "assistant", content }])
+    if (opts?.fromGrok) speakGrokReply(content)
+  }
+
+  function finishPending() {
+    setPendingRequestId(null)
+    setLoading(false)
+  }
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, loading])
+
+  useEffect(() => {
+    if (!pendingRequestId) return
+    let cancelled = false
+    const started = Date.now()
+    let delay = POLL_START_MS
+
+    async function poll() {
+      while (!cancelled && Date.now() - started < POLL_TIMEOUT_MS) {
+        await sleep(delay)
+        if (cancelled) return
+        try {
+          const res = await fetch(`/api/chat?request_id=${encodeURIComponent(pendingRequestId)}`)
+          const data = (await res.json()) as { status?: string; reply?: string; error?: string }
+          if (cancelled) return
+          if (data.status === "complete" && data.reply) {
+            pushAssistant(data.reply, { fromGrok: true })
+            finishPending()
+            return
+          }
+          if (!res.ok && res.status !== 404) {
+            pushAssistant(data.error || "Något gick fel. Försök igen.")
+            finishPending()
+            return
+          }
+        } catch {
+          // Tillfälligt nätfel – fortsätt polla tills timeout.
+        }
+        delay = Math.min(delay + 500, POLL_MAX_MS)
+      }
+      if (!cancelled) {
+        pushAssistant("Svaret dröjer. Försök igen om en stund.")
+        finishPending()
+      }
+    }
+
+    void poll()
+    return () => {
+      cancelled = true
+    }
+  }, [pendingRequestId])
 
   async function send() {
     const text = input.trim()
@@ -53,18 +116,29 @@ export function DiChatCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       })
-      const data = await res.json()
-      if (!res.ok) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: data.error || "Något gick fel. Försök igen." },
-        ])
-      } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: data.reply }])
+      const data = (await res.json()) as {
+        status?: string
+        request_id?: string
+        reply?: string
+        error?: string
       }
+      if (!res.ok) {
+        pushAssistant(data.error || "Något gick fel. Försök igen.")
+        setLoading(false)
+        return
+      }
+      if (data.status === "pending" && data.request_id) {
+        setPendingRequestId(data.request_id)
+        return
+      }
+      if (data.reply) {
+        pushAssistant(data.reply, { fromGrok: true })
+      } else {
+        pushAssistant("Inget svar kom tillbaka.")
+      }
+      setLoading(false)
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Kunde inte nå assistenten." }])
-    } finally {
+      pushAssistant("Kunde inte nå assistenten.")
       setLoading(false)
     }
   }
@@ -127,8 +201,13 @@ export function DiChatCard({
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="rounded-2xl px-4 py-2.5 bg-background border border-border">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                <div
+                  className="rounded-2xl px-4 py-2.5 bg-background border border-border text-sm text-muted-foreground font-sans flex items-center gap-2"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  Hjärnan tänker…
                 </div>
               </div>
             )}

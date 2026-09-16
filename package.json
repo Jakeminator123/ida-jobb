@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "node scripts/migrate.mjs && next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "db:migrate": "node scripts/migrate.mjs",
+    "test": "node --experimental-strip-types --test lib/grokbot.test.ts lib/document-text.test.ts lib/password-gate.test.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.105",

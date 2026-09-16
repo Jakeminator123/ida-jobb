@@ -1,62 +1,132 @@
+import { randomUUID } from "crypto"
 import { type NextRequest, NextResponse } from "next/server"
-import { generateText } from "ai"
+import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { chatMessages, files } from "@/lib/db/schema"
-import { desc } from "drizzle-orm"
+import { collectExtractedText } from "@/lib/document-text"
+import {
+  buildReplyUrl,
+  buildWebhookPayload,
+  postGrokBotWebhook,
+  readGrokBotConfig,
+} from "@/lib/grokbot"
 
-const SYSTEM_PROMPT = `Du är "Hjärnan" – en svensk jobbsöks-assistent och coach för Ida.
-Du är lagret som tänker och förbereder innan något sägs vidare till videoagenten på sajten.
-
-Ditt uppdrag:
-- Hjälp Ida att söka jobb: skriv och förbättra CV och personliga brev, hitta styrkor, förbered intervjuer och formulera svar.
-- Var konkret, uppmuntrande och rak. Ge korta, användbara svar på svenska.
-- När du föreslår text (t.ex. ett stycke till ett personligt brev), presentera det tydligt så Ida kan kopiera det.
-- Om du saknar information, ställ en kort följdfråga istället för att gissa.
-- Håll en varm, professionell ton.`
+function documentSummary(
+  docs: { filename: string; category: string; uploader: string }[],
+): string {
+  if (docs.length === 0) return "Inga dokument är uppladdade än."
+  return (
+    "Uppladdade dokument just nu: " +
+    docs.map((d) => `${d.filename} (${d.category}, av ${d.uploader})`).join("; ")
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const configured = readGrokBotConfig()
+    if (!configured.ok) {
+      return NextResponse.json({ error: configured.error }, { status: 503 })
+    }
+
     const { message } = (await request.json()) as { message?: string }
     const text = (message || "").trim()
     if (!text) {
       return NextResponse.json({ error: "Tomt meddelande" }, { status: 400 })
     }
 
-    // Load recent history for context (oldest first).
-    const history = await db
-      .select()
-      .from(chatMessages)
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(20)
-    history.reverse()
+    const [historyDesc, docs] = await Promise.all([
+      db.select().from(chatMessages).orderBy(desc(chatMessages.createdAt)).limit(20),
+      db.select().from(files).orderBy(desc(files.createdAt)).limit(30),
+    ])
+    const history = historyDesc.reverse()
+    const extractedText = await collectExtractedText(docs)
 
-    // Give the brain awareness of what documents exist.
-    const docs = await db.select().from(files).orderBy(desc(files.createdAt)).limit(30)
-    const docSummary = docs.length
-      ? "Uppladdade dokument just nu: " +
-        docs.map((d) => `${d.filename} (${d.category}, av ${d.uploader})`).join("; ")
-      : "Inga dokument är uppladdade än."
-
-    const { text: reply } = await generateText({
-      model: "openai/gpt-5.4-mini",
-      system: `${SYSTEM_PROMPT}\n\n${docSummary}`,
-      messages: [
-        ...history.map((m) => ({
-          role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
-          content: m.content,
-        })),
-        { role: "user" as const, content: text },
-      ],
+    const requestId = randomUUID()
+    await db.insert(chatMessages).values({
+      role: "user",
+      content: text,
+      requestId,
     })
 
-    await db.insert(chatMessages).values([
-      { role: "user", content: text },
-      { role: "assistant", content: reply },
-    ])
+    const payload = buildWebhookPayload({
+      requestId,
+      message: text,
+      replyUrl: buildReplyUrl(request),
+      history: history.map((m) => ({
+        role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
+        content: m.content,
+      })),
+      documentSummary: documentSummary(docs),
+      extractedText,
+    })
 
-    return NextResponse.json({ reply })
+    let webhookRes: Response
+    try {
+      webhookRes = await postGrokBotWebhook(
+        configured.config.webhookUrl,
+        configured.config.webhookKey,
+        payload,
+      )
+    } catch (error) {
+      console.error("[v0] Grok Bot webhook network error:", error)
+      return NextResponse.json(
+        { error: "Kunde inte nå Grok Bot-webhooken.", request_id: requestId },
+        { status: 502 },
+      )
+    }
+
+    if (!webhookRes.ok) {
+      console.error("[v0] Grok Bot webhook status:", webhookRes.status)
+      return NextResponse.json(
+        {
+          error: `Assistenten kunde inte startas (webhook ${webhookRes.status}). Kontrollera Grok Bot-rutinen.`,
+          request_id: requestId,
+        },
+        { status: 502 },
+      )
+    }
+
+    return NextResponse.json({ status: "pending", request_id: requestId })
   } catch (error) {
     console.error("[v0] Chat error:", error)
     return NextResponse.json({ error: "Något gick fel med assistenten" }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const requestId = request.nextUrl.searchParams.get("request_id")?.trim()
+    if (!requestId) {
+      return NextResponse.json({ error: "Saknar request_id" }, { status: 400 })
+    }
+
+    const [assistant] = await db
+      .select()
+      .from(chatMessages)
+      .where(and(eq(chatMessages.requestId, requestId), eq(chatMessages.role, "assistant")))
+      .limit(1)
+
+    if (assistant) {
+      return NextResponse.json({
+        status: "complete",
+        request_id: requestId,
+        reply: assistant.content,
+      })
+    }
+
+    const [userRow] = await db
+      .select()
+      .from(chatMessages)
+      .where(and(eq(chatMessages.requestId, requestId), eq(chatMessages.role, "user")))
+      .limit(1)
+
+    if (!userRow) {
+      return NextResponse.json({ error: "Okänd förfrågan" }, { status: 404 })
+    }
+
+    return NextResponse.json({ status: "pending", request_id: requestId })
+  } catch (error) {
+    console.error("[v0] Chat poll error:", error)
+    return NextResponse.json({ error: "Kunde inte hämta status" }, { status: 500 })
   }
 }

@@ -9,6 +9,8 @@ import { getTodos } from "@/app/actions/todos"
 import { getChatHistory } from "@/app/actions/chat"
 import { MapPin, Sparkles } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export default async function Home() {
   const [cvFiles, coverFiles, uploads, agentMaterials, todos, chat] = await Promise.all([
     getFiles("cv"),
