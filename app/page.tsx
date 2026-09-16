@@ -71,7 +71,7 @@ export default async function Home() {
           </Card>
 
           {/* DI-chatt (brain + video) */}
-          <DiChatCard history={chat} className="lg:col-span-2 min-h-[560px]" />
+          <DiChatCard history={chat} agentUrl={process.env.DID_LANK} className="lg:col-span-2 min-h-[560px]" />
 
           {/* CV + cover letter */}
           <FileCard

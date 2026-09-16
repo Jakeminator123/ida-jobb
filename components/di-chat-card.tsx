@@ -7,19 +7,21 @@ import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
 import { Send, Loader2, Sparkles, Video } from "lucide-react"
 
-const DID_AGENT_URL =
-  process.env.NEXT_PUBLIC_DID_AGENT_URL ||
+const FALLBACK_DID_AGENT_URL =
   "https://studio.d-id.com/agents/share?id=v2_agt_jcdow0ej&utm_source=copy&key=Y2tfOGdTQ21QQ2VDT05wV18xQzN4TG9Q"
 
 type Message = { role: "user" | "assistant"; content: string }
 
 export function DiChatCard({
   history,
+  agentUrl,
   className,
 }: {
   history: ChatMessageRow[]
+  agentUrl?: string
   className?: string
 }) {
+  const didAgentUrl = agentUrl || FALLBACK_DID_AGENT_URL
   const [messages, setMessages] = useState<Message[]>(
     history.map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
   )
@@ -145,7 +147,7 @@ export function DiChatCard({
       ) : (
         <div className="flex-1 min-h-0 p-4">
           <iframe
-            src={DID_AGENT_URL}
+            src={didAgentUrl}
             title="D-ID videoagent"
             allow="camera; microphone; autoplay; clipboard-write"
             className="w-full h-full min-h-[420px] rounded-xl border border-border bg-background"
