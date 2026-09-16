@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
+import { DidAgent } from "@/components/did-agent"
 import { Send, Loader2, Sparkles, Video, ExternalLink } from "lucide-react"
 
 const FALLBACK_DID_AGENT_URL =
@@ -28,7 +29,13 @@ export function DiChatCard({
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<"brain" | "video">("brain")
+  const [videoOpened, setVideoOpened] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  function openVideo() {
+    setVideoOpened(true)
+    setTab("video")
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
@@ -85,7 +92,7 @@ export function DiChatCard({
             Hjärnan
           </button>
           <button
-            onClick={() => setTab("video")}
+            onClick={openVideo}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-sans transition-colors ${
               tab === "video" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
             }`}
@@ -144,26 +151,17 @@ export function DiChatCard({
             </Button>
           </div>
         </div>
-      ) : (
-        <div className="flex flex-col flex-1 min-h-0 p-4 gap-3">
+      ) : null}
+
+      {videoOpened && (
+        <div className={`${tab === "video" ? "flex" : "hidden"} flex-col flex-1 min-h-0 p-4 gap-3`}>
           <div className="relative flex-1 min-h-[360px] rounded-xl border border-border bg-background overflow-hidden">
-            <iframe
-              src={didAgentUrl}
-              title="D-ID videoagent"
-              allow="camera; microphone; autoplay; clipboard-write; fullscreen"
-              className="absolute inset-0 w-full h-full"
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6 text-center">
-              <p className="text-xs text-muted-foreground font-sans max-w-xs">
-                Laddas inte videoagenten här? D-ID tillåter ibland inte inbäddning – öppna den då i
-                ett eget fönster med knappen nedan.
-              </p>
-            </div>
+            <DidAgent className="absolute inset-0 h-full w-full" />
           </div>
-          <Button asChild variant="secondary" className="rounded-full w-full">
+          <Button asChild variant="ghost" size="sm" className="rounded-full text-muted-foreground self-center">
             <a href={didAgentUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4" />
-              Öppna videoagenten i nytt fönster
+              <ExternalLink className="w-3.5 h-3.5" />
+              Öppna i eget fönster
             </a>
           </Button>
         </div>
