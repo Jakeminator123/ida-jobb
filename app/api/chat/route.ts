@@ -1,8 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
+import { type NextRequest, NextResponse } from "next/server"
+import { desc } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { chatMessages, files } from "@/lib/db/schema"
-import { desc } from "drizzle-orm"
 
 const SYSTEM_PROMPT = `Du är "JakobsJobbBot" – en svensk jobbcoach för Jakobs kandidater, här som personlig coach för Ida.
 Du är hjärnan som tänker och förbereder innan något sägs vidare till videoagenten på sajten.
@@ -27,16 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tomt meddelande" }, { status: 400 })
     }
 
-    // Load recent history for context (oldest first).
-    const history = await db
-      .select()
-      .from(chatMessages)
-      .orderBy(desc(chatMessages.createdAt))
-      .limit(20)
-    history.reverse()
+    const [historyDesc, docs] = await Promise.all([
+      db.select().from(chatMessages).orderBy(desc(chatMessages.createdAt)).limit(20),
+      db.select().from(files).orderBy(desc(files.createdAt)).limit(30),
+    ])
+    const history = historyDesc.reverse()
 
     // Give the brain awareness of what documents exist.
-    const docs = await db.select().from(files).orderBy(desc(files.createdAt)).limit(30)
     const docSummary = docs.length
       ? "Uppladdade dokument just nu: " +
         docs.map((d) => `${d.filename} (${d.category}, av ${d.uploader})`).join("; ")
@@ -48,7 +45,10 @@ export async function POST(request: NextRequest) {
     const docContents = withText.length
       ? "\n\nInnehåll i dokumenten (full läsåtkomst):\n" +
         withText
-          .map((d) => `--- ${d.filename} (${d.category}, av ${d.uploader}) ---\n${(d.extractedText || "").slice(0, PER_DOC)}`)
+          .map(
+            (d) =>
+              `--- ${d.filename} (${d.category}, av ${d.uploader}) ---\n${(d.extractedText || "").slice(0, PER_DOC)}`,
+          )
           .join("\n\n")
       : ""
 
@@ -64,10 +64,8 @@ export async function POST(request: NextRequest) {
       ],
     })
 
-    await db.insert(chatMessages).values([
-      { role: "user", content: text },
-      { role: "assistant", content: reply },
-    ])
+    await db.insert(chatMessages).values({ role: "user", content: text })
+    await db.insert(chatMessages).values({ role: "assistant", content: reply })
 
     return NextResponse.json({ reply })
   } catch (error) {
