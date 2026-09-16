@@ -28,8 +28,8 @@ export function DiChatCard({
   )
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [tab, setTab] = useState<"brain" | "video">("brain")
-  const [videoOpened, setVideoOpened] = useState(false)
+  const [tab, setTab] = useState<"brain" | "video">("video")
+  const [videoOpened, setVideoOpened] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function openVideo() {
