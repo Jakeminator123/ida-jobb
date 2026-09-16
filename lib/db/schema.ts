@@ -12,6 +12,8 @@ export const files = pgTable("files", {
   pathname: text("pathname").notNull(),
   contentType: text("content_type"),
   size: integer("size"),
+  // Text extracted from the document so the AI brain can read its full contents.
+  extractedText: text("extracted_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 

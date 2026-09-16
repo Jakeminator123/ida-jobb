@@ -2,6 +2,7 @@ import { put } from "@vercel/blob"
 import { type NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { files } from "@/lib/db/schema"
+import { extractDocumentText } from "@/lib/text-extract"
 
 const ALLOWED_CATEGORIES = new Set(["cv", "cover_letter", "upload", "agent_material"])
 const MAX_SIZE = 20 * 1024 * 1024 // 20 MB
@@ -26,6 +27,9 @@ export async function POST(request: NextRequest) {
     const key = `${category}/${Date.now()}-${file.name}`
     const blob = await put(key, file, { access: "private", addRandomSuffix: true })
 
+    // Extract text so the AI brain can read the full document contents.
+    const extractedText = await extractDocumentText(file, file.type || null)
+
     const [row] = await db
       .insert(files)
       .values({
@@ -35,6 +39,7 @@ export async function POST(request: NextRequest) {
         pathname: blob.pathname,
         contentType: file.type || null,
         size: file.size,
+        extractedText,
       })
       .returning()
 

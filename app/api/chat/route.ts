@@ -12,7 +12,8 @@ Ditt uppdrag:
 - Var konkret, uppmuntrande och rak. Ge korta, användbara svar på svenska.
 - När du föreslår text (t.ex. ett stycke till ett personligt brev), presentera det tydligt så Ida kan kopiera det.
 - Om du saknar information, ställ en kort följdfråga istället för att gissa.
-- Håll en varm, professionell ton.`
+- Håll en varm, professionell ton.
+- Du har full läsåtkomst till innehållet i Idas uppladdade dokument (CV, personligt brev, filer och material från agenten). Använd innehållet aktivt när du hjälper henne, och referera till konkreta detaljer ur dokumenten.`
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,9 +38,19 @@ export async function POST(request: NextRequest) {
         docs.map((d) => `${d.filename} (${d.category}, av ${d.uploader})`).join("; ")
       : "Inga dokument är uppladdade än."
 
+    // Give the brain the actual contents of the documents it can read.
+    const PER_DOC = 6000
+    const withText = docs.filter((d) => d.extractedText && d.extractedText.trim())
+    const docContents = withText.length
+      ? "\n\nInnehåll i dokumenten (full läsåtkomst):\n" +
+        withText
+          .map((d) => `--- ${d.filename} (${d.category}, av ${d.uploader}) ---\n${(d.extractedText || "").slice(0, PER_DOC)}`)
+          .join("\n\n")
+      : ""
+
     const { text: reply } = await generateText({
       model: "openai/gpt-5.4-mini",
-      system: `${SYSTEM_PROMPT}\n\n${docSummary}`,
+      system: `${SYSTEM_PROMPT}\n\n${docSummary}${docContents}`,
       messages: [
         ...history.map((m) => ({
           role: m.role === "assistant" ? ("assistant" as const) : ("user" as const),
