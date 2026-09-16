@@ -8,6 +8,7 @@ import type { ChatMessageRow } from "@/lib/db/schema"
 import { Send, Loader2, Sparkles, Video } from "lucide-react"
 
 const DID_AGENT_URL =
+  process.env.NEXT_PUBLIC_DID_AGENT_URL ||
   "https://studio.d-id.com/agents/share?id=v2_agt_jcdow0ej&utm_source=copy&key=Y2tfOGdTQ21QQ2VDT05wV18xQzN4TG9Q"
 
 type Message = { role: "user" | "assistant"; content: string }
