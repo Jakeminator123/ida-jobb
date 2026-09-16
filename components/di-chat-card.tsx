@@ -14,16 +14,6 @@ const FALLBACK_DID_AGENT_URL =
 
 type Message = { role: "user" | "assistant"; content: string }
 
-const POLL_TIMEOUT_MS = 180_000
-const POLL_START_MS = 1_500
-const POLL_MAX_MS = 4_000
-
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
 export function DiChatCard({
   history,
   agentUrl,
@@ -39,7 +29,6 @@ export function DiChatCard({
   )
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
-  const [pendingRequestId, setPendingRequestId] = useState<string | null>(null)
   const [tab, setTab] = useState<"brain" | "video">("video")
   const [videoOpened, setVideoOpened] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -54,55 +43,9 @@ export function DiChatCard({
     if (opts?.fromGrok) speakGrokReply(content)
   }
 
-  function finishPending() {
-    setPendingRequestId(null)
-    setLoading(false)
-  }
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, loading])
-
-  useEffect(() => {
-    if (!pendingRequestId) return
-    let cancelled = false
-    const started = Date.now()
-    let delay = POLL_START_MS
-
-    async function poll() {
-      while (!cancelled && Date.now() - started < POLL_TIMEOUT_MS) {
-        await sleep(delay)
-        if (cancelled) return
-        try {
-          const res = await fetch(`/api/chat?request_id=${encodeURIComponent(pendingRequestId)}`)
-          const data = (await res.json()) as { status?: string; reply?: string; error?: string }
-          if (cancelled) return
-          if (data.status === "complete" && data.reply) {
-            pushAssistant(data.reply, { fromGrok: true })
-            finishPending()
-            return
-          }
-          if (!res.ok && res.status !== 404) {
-            pushAssistant(data.error || "Något gick fel. Försök igen.")
-            finishPending()
-            return
-          }
-        } catch {
-          // Tillfälligt nätfel – fortsätt polla tills timeout.
-        }
-        delay = Math.min(delay + 500, POLL_MAX_MS)
-      }
-      if (!cancelled) {
-        pushAssistant("Svaret dröjer. Försök igen om en stund.")
-        finishPending()
-      }
-    }
-
-    void poll()
-    return () => {
-      cancelled = true
-    }
-  }, [pendingRequestId])
 
   async function send() {
     const text = input.trim()
@@ -116,19 +59,10 @@ export function DiChatCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       })
-      const data = (await res.json()) as {
-        status?: string
-        request_id?: string
-        reply?: string
-        error?: string
-      }
+      const data = (await res.json()) as { reply?: string; error?: string }
       if (!res.ok) {
         pushAssistant(data.error || "Något gick fel. Försök igen.")
         setLoading(false)
-        return
-      }
-      if (data.status === "pending" && data.request_id) {
-        setPendingRequestId(data.request_id)
         return
       }
       if (data.reply) {
