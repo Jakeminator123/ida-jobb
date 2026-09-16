@@ -11,8 +11,9 @@ const geist = Geist({
 })
 
 export const metadata: Metadata = {
-  title: "Portfolio - Your Name",
-  description: "A modern bento-style portfolio showcasing my work and experience",
+  title: "Idas jobbsökarstudio",
+  description:
+    "Idas personliga jobbsökarstudio – CV, personligt brev, AI-agent, filer och att göra-lista på ett ställe",
   generator: "v0.app",
 }
 
