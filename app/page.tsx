@@ -7,7 +7,9 @@ import { DiChatCard } from "@/components/di-chat-card"
 import { getFiles } from "@/app/actions/files"
 import { getTodos } from "@/app/actions/todos"
 import { getChatHistory } from "@/app/actions/chat"
-import { MapPin, Sparkles } from "lucide-react"
+import { logout } from "@/app/actions/auth"
+import { Button } from "@/components/ui/button"
+import { MapPin, Sparkles, LogOut } from "lucide-react"
 
 export const dynamic = "force-dynamic"
 
@@ -26,8 +28,12 @@ export default async function Home() {
       <div className="max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary font-sans">ID</span>
+            <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-primary/30 bg-primary/10 shrink-0">
+              <img
+                src="/images/ida.png"
+                alt="Porträtt av Ida"
+                className="w-full h-full object-cover object-top"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground font-sans">Idas jobbsökarstudio</h1>
@@ -37,7 +43,20 @@ export default async function Home() {
               </div>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <form action={logout}>
+              <Button
+                type="submit"
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-muted-foreground gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="font-sans">Logga ut</span>
+              </Button>
+            </form>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

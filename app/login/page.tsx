@@ -1,53 +1,27 @@
-"use client"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { Card } from "@/components/ui/card"
+import { LoginForm } from "@/components/login-form"
+import { COOKIE_NAME, COOKIE_VALUE } from "@/lib/auth-gate"
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-
-export default function LoginPage() {
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault()
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      })
-      if (!res.ok) {
-        const data = (await res.json()) as { error?: string }
-        setError(data.error || "Fel lösenord")
-        return
-      }
-      window.location.href = "/"
-    } catch {
-      setError("Kunde inte logga in")
-    } finally {
-      setLoading(false)
-    }
+export default async function LoginPage() {
+  const store = await cookies()
+  if (store.get(COOKIE_NAME)?.value === COOKIE_VALUE) {
+    redirect("/")
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-xl font-bold font-sans">Idas jobbsökarstudio</h1>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Lösenord"
-          className="w-full rounded-full border border-border bg-background px-4 py-2.5 text-sm font-sans outline-none focus:ring-2 focus:ring-ring"
-        />
-        {error ? <p className="text-sm text-destructive font-sans">{error}</p> : null}
-        <Button type="submit" className="rounded-full w-full" disabled={loading}>
-          Logga in
-        </Button>
-      </form>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-sm p-8 bg-card border border-border rounded-2xl shadow-none">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <span className="text-xl font-bold text-primary font-sans">ID</span>
+          </div>
+          <h1 className="text-xl font-bold text-card-foreground font-sans">Idas jobbsökarstudio</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-sans">Ange lösenordet för att komma in.</p>
+        </div>
+        <LoginForm />
+      </Card>
     </div>
   )
 }

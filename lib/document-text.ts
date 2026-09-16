@@ -72,7 +72,7 @@ async function extractFromBuffer(
 
   if (type.includes("pdf") || lower.endsWith(".pdf")) {
     const extracted = await extractText(new Uint8Array(buffer), { mergePages: true })
-    return typeof extracted.text === "string" ? extracted.text : extracted.text.join("\n")
+    return Array.isArray(extracted.text) ? extracted.text.join("\n") : extracted.text
   }
 
   if (
