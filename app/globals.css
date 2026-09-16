@@ -29,7 +29,7 @@
   --chart-3: #2d2d2d;
   --chart-4: #ffffff;
   --chart-5: #e5e1dc;
-  --radius: 0.5rem;
+  --radius: 0.875rem;
   --sidebar: #f7f5f3;
   --sidebar-foreground: #2d2d2d;
   --sidebar-primary: #cc785c;
@@ -66,7 +66,7 @@
   --chart-3: #f7f5f3;
   --chart-4: #2d2d2d;
   --chart-5: #3a3a3a;
-  --radius: 0.5rem;
+  --radius: 0.875rem;
   --sidebar: #1a1a1a;
   --sidebar-foreground: #f7f5f3;
   --sidebar-primary: #cc785c;
@@ -134,5 +134,29 @@
     background-attachment: fixed;
     background-repeat: no-repeat;
     min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Shared bento tile: subtle depth + a warm lift on hover */
+  .bento-card {
+    position: relative;
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent);
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+
+  .bento-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+    box-shadow: 0 14px 40px -18px color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+
+  /* Frosted panel effect for the hero/intro tiles */
+  .bento-glass {
+    background: color-mix(in oklab, var(--card) 88%, transparent);
+    backdrop-filter: blur(8px);
   }
 }

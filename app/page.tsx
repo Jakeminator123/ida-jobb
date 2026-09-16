@@ -26,24 +26,33 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-primary/30 bg-primary/10 shrink-0">
-              <img
-                src="/images/ida.png"
-                alt="Porträtt av Ida"
-                className="w-full h-full object-cover object-top"
-              />
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-primary/30 bg-primary/10 shadow-sm">
+                <img
+                  src="/images/ida.png"
+                  alt="Porträtt av Ida"
+                  className="w-full h-full object-cover object-top"
+                />
+              </div>
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-background" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground font-sans">Idas jobbsökarstudio</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground font-sans tracking-tight">
+                Idas jobbsökarstudio
+              </h1>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 <MapPin className="w-4 h-4" />
                 <span className="font-sans">Söker nya möjligheter</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 font-sans">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Tillgänglig för jobb
+            </span>
             <ThemeToggle />
             <form action={logout}>
               <Button
@@ -63,18 +72,20 @@ export default async function Home() {
           {/* Intro / status */}
           <Card
             id="about"
-            className="lg:col-span-1 p-6 bg-card border border-border rounded-2xl shadow-none flex flex-col"
+            className="bento-card bento-glass lg:col-span-1 p-6 border border-border rounded-2xl flex flex-col"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-              <h2 className="font-bold text-card-foreground font-sans">Tillgänglig för jobb</h2>
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/15 text-primary shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <h2 className="font-bold text-card-foreground font-sans">Välkommen</h2>
             </div>
             <p className="text-sm text-card-foreground leading-relaxed font-sans flex-1">
-              Välkommen till Idas personliga jobbsökarstudio. Här samlar Ida sitt CV och personliga brev,
+              Detta är Idas personliga jobbsökarstudio. Här samlar Ida sitt CV och personliga brev,
               chattar med sin AI-agent för att förbereda ansökningar och intervjuer, laddar upp material och
               hämtar det som agenten tagit fram – allt på ett ställe.
             </p>
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-5">
               <Badge variant="secondary" className="font-sans text-xs rounded-full">
                 CV
               </Badge>

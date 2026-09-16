@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
 import { DidAgent } from "@/components/did-agent"
-import { speakGrokReply } from "@/lib/did-speak"
 import { Send, Loader2, Sparkles, Video, ExternalLink } from "lucide-react"
 
 const FALLBACK_DID_AGENT_URL =
@@ -38,9 +37,8 @@ export function DiChatCard({
     setTab("video")
   }
 
-  function pushAssistant(content: string, opts?: { fromGrok?: boolean }) {
+  function pushAssistant(content: string) {
     setMessages((prev) => [...prev, { role: "assistant", content }])
-    if (opts?.fromGrok) speakGrokReply(content)
   }
 
   useEffect(() => {
@@ -66,7 +64,7 @@ export function DiChatCard({
         return
       }
       if (data.reply) {
-        pushAssistant(data.reply, { fromGrok: true })
+        pushAssistant(data.reply)
       } else {
         pushAssistant("Inget svar kom tillbaka.")
       }
@@ -78,7 +76,7 @@ export function DiChatCard({
   }
 
   return (
-    <Card className={`bg-card border border-border rounded-2xl shadow-none flex flex-col overflow-hidden ${className ?? ""}`}>
+    <Card className={`bento-card bg-card border border-border rounded-2xl flex flex-col overflow-hidden ${className ?? ""}`}>
       <div className="flex items-center justify-between gap-3 p-6 pb-4 border-b border-border">
         <div>
           <h3 className="font-bold text-card-foreground font-sans flex items-center gap-2">

@@ -69,7 +69,7 @@ export function FileCard({
   }
 
   return (
-    <Card className={`p-6 bg-card border border-border rounded-2xl shadow-none flex flex-col ${className ?? ""}`}>
+    <Card className={`bento-card p-6 bg-card border border-border rounded-2xl flex flex-col ${className ?? ""}`}>
       <div className="flex items-start justify-between gap-3 mb-1">
         <h3 className="font-bold text-card-foreground font-sans">{title}</h3>
         <Button

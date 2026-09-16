@@ -48,7 +48,7 @@ export function TodoCard({ todos, className }: { todos: TodoRow[]; className?: s
   const remaining = items.filter((t) => !t.done).length
 
   return (
-    <Card className={`p-6 bg-card border border-border rounded-2xl shadow-none flex flex-col ${className ?? ""}`}>
+    <Card className={`bento-card p-6 bg-card border border-border rounded-2xl flex flex-col ${className ?? ""}`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-card-foreground font-sans">Att göra</h3>
         <span className="text-xs text-muted-foreground font-sans">{remaining} kvar</span>
