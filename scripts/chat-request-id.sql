@@ -1,5 +1,5 @@
--- Körs automatiskt vid första chat-anropet (lib/db/ensure.ts).
--- Kan även köras manuellt mot Postgres/Neon.
+-- Körs FÖRE next build via `node scripts/migrate.mjs` (pnpm build / pnpm db:migrate).
+-- Inte dynamiskt inifrån /api/chat — homepage läser request_id redan vid deploy.
 
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS request_id text;
 

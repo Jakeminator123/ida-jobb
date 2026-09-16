@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import type { ChatMessageRow } from "@/lib/db/schema"
 import { DidAgent } from "@/components/did-agent"
+import { speakGrokReply } from "@/lib/did-speak"
 import { Send, Loader2, Sparkles, Video, ExternalLink } from "lucide-react"
 
 const FALLBACK_DID_AGENT_URL =
@@ -48,8 +49,9 @@ export function DiChatCard({
     setTab("video")
   }
 
-  function pushAssistant(content: string) {
+  function pushAssistant(content: string, opts?: { fromGrok?: boolean }) {
     setMessages((prev) => [...prev, { role: "assistant", content }])
+    if (opts?.fromGrok) speakGrokReply(content)
   }
 
   function finishPending() {
@@ -76,7 +78,7 @@ export function DiChatCard({
           const data = (await res.json()) as { status?: string; reply?: string; error?: string }
           if (cancelled) return
           if (data.status === "complete" && data.reply) {
-            pushAssistant(data.reply)
+            pushAssistant(data.reply, { fromGrok: true })
             finishPending()
             return
           }
@@ -130,7 +132,7 @@ export function DiChatCard({
         return
       }
       if (data.reply) {
-        pushAssistant(data.reply)
+        pushAssistant(data.reply, { fromGrok: true })
       } else {
         pushAssistant("Inget svar kom tillbaka.")
       }

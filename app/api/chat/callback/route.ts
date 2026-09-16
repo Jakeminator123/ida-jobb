@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { and, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { ensureChatSchema } from "@/lib/db/ensure"
 import { chatMessages } from "@/lib/db/schema"
 import {
   callbackAuthorized,
@@ -32,8 +31,6 @@ export async function POST(request: NextRequest) {
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 })
     }
-
-    await ensureChatSchema()
 
     const [userRow] = await db
       .select()

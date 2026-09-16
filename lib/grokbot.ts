@@ -9,6 +9,7 @@ Ditt uppdrag:
 - När du föreslår text (t.ex. ett stycke till ett personligt brev), presentera det tydligt så Ida kan kopiera det.
 - Om du saknar information, ställ en kort följdfråga istället för att gissa.
 - Håll en varm, professionell ton.
+- Läs extracted_text (CV, personligt brev m.m.) när det finns. Hitta inte på innehåll som inte står där.
 
 När du är klar: POST:a svaret till reply_url som JSON { "request_id", "reply" } med Authorization: Bearer <GROKBOT_CALLBACK_SECRET>.`
 
@@ -35,6 +36,7 @@ export type GrokBotWebhookPayload = {
   reply_url: string
   history: ChatHistoryItem[]
   document_summary: string
+  extracted_text: string
   instructions: string
 }
 
@@ -115,6 +117,7 @@ export function buildWebhookPayload(input: {
   replyUrl: string
   history: ChatHistoryItem[]
   documentSummary: string
+  extractedText?: string
 }): GrokBotWebhookPayload {
   return {
     source: "ida-jobb",
@@ -123,6 +126,7 @@ export function buildWebhookPayload(input: {
     reply_url: input.replyUrl,
     history: input.history,
     document_summary: input.documentSummary,
+    extracted_text: input.extractedText ?? "",
     instructions: HJARNAN_INSTRUCTIONS,
   }
 }

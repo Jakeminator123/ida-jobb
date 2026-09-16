@@ -118,6 +118,7 @@ describe("buildReplyUrl / payload / callback body", () => {
       replyUrl: "https://app.example/api/chat/callback",
       history: [{ role: "assistant", content: "Tidigare" }],
       documentSummary: "Inga dokument är uppladdade än.",
+      extractedText: "--- cv.pdf (cv) ---\nIda Andersson",
     })
     assert.equal(payload.source, "ida-jobb")
     assert.equal(payload.request_id, "req-1")
@@ -125,6 +126,7 @@ describe("buildReplyUrl / payload / callback body", () => {
     assert.equal(payload.reply_url, "https://app.example/api/chat/callback")
     assert.deepEqual(payload.history, [{ role: "assistant", content: "Tidigare" }])
     assert.equal(payload.document_summary, "Inga dokument är uppladdade än.")
+    assert.equal(payload.extracted_text, "--- cv.pdf (cv) ---\nIda Andersson")
     assert.equal(payload.instructions, HJARNAN_INSTRUCTIONS)
   })
 

@@ -2,8 +2,8 @@ import { randomUUID } from "crypto"
 import { type NextRequest, NextResponse } from "next/server"
 import { and, desc, eq } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { ensureChatSchema } from "@/lib/db/ensure"
 import { chatMessages, files } from "@/lib/db/schema"
+import { collectExtractedText } from "@/lib/document-text"
 import {
   buildReplyUrl,
   buildWebhookPayload,
@@ -34,13 +34,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tomt meddelande" }, { status: 400 })
     }
 
-    await ensureChatSchema()
-
     const [historyDesc, docs] = await Promise.all([
       db.select().from(chatMessages).orderBy(desc(chatMessages.createdAt)).limit(20),
       db.select().from(files).orderBy(desc(files.createdAt)).limit(30),
     ])
     const history = historyDesc.reverse()
+    const extractedText = await collectExtractedText(docs)
 
     const requestId = randomUUID()
     await db.insert(chatMessages).values({
@@ -58,6 +57,7 @@ export async function POST(request: NextRequest) {
         content: m.content,
       })),
       documentSummary: documentSummary(docs),
+      extractedText,
     })
 
     let webhookRes: Response
@@ -99,8 +99,6 @@ export async function GET(request: NextRequest) {
     if (!requestId) {
       return NextResponse.json({ error: "Saknar request_id" }, { status: 400 })
     }
-
-    await ensureChatSchema()
 
     const [assistant] = await db
       .select()

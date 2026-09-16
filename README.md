@@ -37,11 +37,10 @@ DI-fliken **Hjärnan** anropar inte längre `generateText` / OpenAI inline. Flö
     |  Authorization: Bearer <GROKBOT_WEBHOOK_KEY>
     v
 [Grok Bot-rutin startar]          UI visar "Hjärnan tänker…"
-    |  POST /api/chat/callback
-    |  Authorization: Bearer <GROKBOT_CALLBACK_SECRET>
+    |  POST /api/chat/callback   (ingen Ida-cookie; GROKBOT_CALLBACK_SECRET)
     |  { request_id, reply }
     v
-[API] sparar assistant-rad
+[API] sparar assistant-rad  →  samma text i Hjärnan
     |
     v
 [UI] pollar GET /api/chat?request_id=… tills reply finns
@@ -49,20 +48,22 @@ DI-fliken **Hjärnan** anropar inte längre `generateText` / OpenAI inline. Flö
 
 Det finns **ingen tyst fallback** till OpenAI. Saknas webhook-env returneras ett tydligt svenskt 503-fel.
 
-D-ID-videoembedden är oförändrad.
+`request_id` läggs på `chat_messages` via **`pnpm db:migrate` / `pnpm build`** (`node scripts/migrate.mjs` kör `scripts/chat-request-id.sql` **före** `next build`). Ingen dynamisk `ALTER` i `/api/chat`.
 
-### Vercel / `.env` (inga hemligheter i git)
+`/api/chat/callback` är det **enda** undantaget från lösenordsmiddleware. Grok Bot har ingen cookie; auth är `GROKBOT_CALLBACK_SECRET` + idempotens på `request_id`.
+
+### Vercel env (inga hemligheter i git)
 
 | Variabel | Krävs | Användning |
 |---|---|---|
 | `GROKBOT_WEBHOOK_URL` | ja | Routine-fältet **POST to** från Grok Bot |
 | `GROKBOT_WEBHOOK_KEY` | ja | Routine-fältet **key** (`crsr_…`). Skickas som `Authorization: Bearer <key>`. Om värdet redan börjar med `Bearer ` prefixas det inte igen. |
-| `GROKBOT_CALLBACK_SECRET` | ja | Delad hemlighet som Grok Bot måste skicka tillbaka när den POST:ar svaret |
-| `APP_URL` | nej | Publik bas-URL, t.ex. `https://ida-jobb.vercel.app`. Används för `reply_url`. Annars `NEXT_PUBLIC_APP_URL` eller `Host` / `X-Forwarded-*`. |
-| `DATABASE_URL` | ja | Befintlig Postgres (Neon). Första chat-anropet kör `scripts/chat-request-id.sql` automatiskt (`request_id`-kolumn + index). |
+| `GROKBOT_CALLBACK_SECRET` | ja | Bearer (eller `x-grokbot-callback-secret`) in till `/api/chat/callback` |
+| `APP_URL` | ja i prod | `https://ida-jobb.vercel.app` — bas för `reply_url` |
+| `DATABASE_URL` | ja | Postgres/Neon. Migrering körs i build-steget. |
 
 Header ut till Grok Bot: **`Authorization`** (Bearer).  
-Header in från Grok Bot: **`Authorization: Bearer <GROKBOT_CALLBACK_SECRET>`**, eller alternativt `x-grokbot-callback-secret`. Callback utan giltig hemlighet får `401`.
+Header in från Grok Bot: **`Authorization: Bearer <GROKBOT_CALLBACK_SECRET>`**, eller alternativt `x-grokbot-callback-secret`. Callback utan giltig hemlighet får `401`. `/api/chat` (skicka/poll) skyddas som resten av sajten.
 
 Så här skapar du webhook-värdena i Cursor: Bot → View conversation details → Routines → When to run → webhook. Spara rutinen, kopiera **POST to**, **key** och ev. färdig **header**.
 
@@ -80,6 +81,7 @@ Ut till Grok Bot (`POST GROKBOT_WEBHOOK_URL`):
   "reply_url": "https://<host>/api/chat/callback",
   "history": [{ "role": "user|assistant", "content": "…" }],
   "document_summary": "Uppladdade dokument just nu: …",
+  "extracted_text": "--- cv.pdf (cv) ---\n…begränsad dokumenttext…",
   "instructions": "Du är Hjärnan …"
 }
 ```
@@ -97,6 +99,17 @@ Alias `text` eller `content` accepteras för `reply`. Samma `request_id` två g�
 
 Klient efter `POST /api/chat`: `{ "status": "pending", "request_id": "uuid" }` — inte ett färdigt assistantsvar.  
 Poll: `GET /api/chat?request_id=uuid` → `{ "status": "pending" }` eller `{ "status": "complete", "reply": "…" }`.
+
+`extracted_text` är begränsad (max 5 dokument, 8 000 tecken/fil, 24 000 totalt). CV och personligt brev först. PDF/DOCX/TXT läses från Blob.
+
+### En konversation (Grok = hjärna, D-ID = röst)
+
+Målet: samma Grok-svar visas som text och talas av D-ID när video är på. Stock-embed kan inte köras som ren TTS. Kvar:
+
+- D-ID Custom LLM mot en Grok-endpoint, eller
+- D-ID Agents SDK/API som tar emot färdigt `reply`
+
+Hook idag: `speakGrokReply(reply)` / event `ida-grok-reply` när svaret landar.
 
 ## Learn More
 
