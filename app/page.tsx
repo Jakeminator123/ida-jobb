@@ -26,8 +26,12 @@ export default async function Home() {
       <div className="max-w-6xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary font-sans">ID</span>
+            <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-primary/30 bg-primary/10 shrink-0">
+              <img
+                src="/images/ida.png"
+                alt="Porträtt av Ida"
+                className="w-full h-full object-cover object-top"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-foreground font-sans">Idas jobbsökarstudio</h1>
