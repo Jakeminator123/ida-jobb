@@ -16,7 +16,7 @@ const client = new pg.Client({ connectionString: databaseUrl })
 await client.connect()
 try {
   await client.query(sql)
-  console.log("Migrering klar: chat_messages.request_id")
+  console.log("Migrering klar: files.extracted_text + chat_messages.request_id")
 } finally {
   await client.end()
 }

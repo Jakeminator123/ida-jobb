@@ -1,7 +1,7 @@
 import { get } from "@vercel/blob"
 import mammoth from "mammoth"
 import { extractText } from "unpdf"
-import type { FileRow } from "@/lib/db/schema"
+import type { FileRow } from "./db/schema"
 
 export const MAX_DOCS = 5
 export const MAX_CHARS_PER_DOC = 8_000
@@ -93,6 +93,12 @@ export async function collectExtractedText(docs: FileRow[]): Promise<string> {
   const parts: { filename: string; category: string; text: string }[] = []
 
   for (const doc of selected) {
+    const stored = doc.extractedText?.trim()
+    if (stored) {
+      parts.push({ filename: doc.filename, category: doc.category, text: stored })
+      continue
+    }
+
     try {
       const buffer = await bufferFromBlob(doc.pathname)
       if (!buffer) continue

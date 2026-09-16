@@ -1,5 +1,8 @@
 -- Körs FÖRE next build via `node scripts/migrate.mjs` (pnpm build / pnpm db:migrate).
--- Inte dynamiskt inifrån /api/chat — homepage läser request_id redan vid deploy.
+-- extracted_text: synk Grok-chatt läser CV/personligt brev.
+-- request_id: kvar från den borttagna webhook-vägen (ofarlig kolumn).
+
+ALTER TABLE files ADD COLUMN IF NOT EXISTS extracted_text text;
 
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS request_id text;
 
