@@ -30,7 +30,7 @@ export const chatMessages = pgTable("chat_messages", {
   // "user" | "assistant"
   role: text("role").notNull(),
   content: text("content").notNull(),
-  // Shared id for an async Grok Bot turn (user row + matching assistant row).
+  // Leftover from the removed async webhook path. Unused by sync /api/chat.
   requestId: text("request_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })

@@ -2,11 +2,11 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { LoginForm } from "@/components/login-form"
-import { COOKIE_NAME, COOKIE_VALUE } from "@/lib/auth-gate"
+import { COOKIE_NAME, COOKIE_VALUE, siteGateEnabled } from "@/lib/auth-gate"
 
 export default async function LoginPage() {
   const store = await cookies()
-  if (store.get(COOKIE_NAME)?.value === COOKIE_VALUE) {
+  if (!siteGateEnabled() || store.get(COOKIE_NAME)?.value === COOKIE_VALUE) {
     redirect("/")
   }
 

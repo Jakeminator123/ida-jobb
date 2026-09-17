@@ -2,13 +2,13 @@
 
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { COOKIE_NAME, COOKIE_VALUE, SITE_PASSWORD } from "@/lib/auth-gate"
+import { COOKIE_NAME, COOKIE_VALUE, passwordMatches } from "@/lib/auth-gate"
 
 export type LoginState = { error?: string }
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const password = String(formData.get("password") || "")
-  if (password !== SITE_PASSWORD) {
+  if (!passwordMatches(password)) {
     return { error: "Fel lösenord. Försök igen." }
   }
 
